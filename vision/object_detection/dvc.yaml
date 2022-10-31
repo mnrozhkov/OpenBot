@@ -1,0 +1,92 @@
+stages:
+  # download:
+  #   params:
+  #     - params.yaml:
+  #       - download
+  #   cmd: bash data/scripts/get_${download.dataset}.sh
+  #   outs:
+  #     - data/${download.dataset}
+  # train:
+  #   params:
+  #     - params.yaml:
+  #         - train
+  #   deps:
+  #     - data/${download.dataset}
+  #     - train.py
+  #   cmd: python train.py --params params.yaml
+  #   outs:
+  #     - runs/train/weights/last.pt  # :
+  #         # checkpoint: true
+  #     - runs/train/weights/best.pt  # :
+  #         # checkpoint: true
+  #     - runs/train/labels_correlogram.jpg
+  #     - runs/train/labels.jpg
+  #     - runs/train/train_batch0.jpg
+  #     - runs/train/confusion_matrix.png
+  #     - runs/train/results.png
+    # metrics:
+    #   - runs/train/results.txt:
+    #       cache: false
+    #   - runs/train/hyp.yaml:
+    #       cache: false
+    # live:
+    #   runs/train/metrics:
+    #     summary: true
+    #     html: true
+    #     cache: false
+
+  val:
+    cmd: >- 
+      docker run -it --ipc=host 
+      -v "$(pwd)"/data_config:/usr/src/app/data_config
+      -v "$(pwd)"/datasets:/usr/src/datasets 
+      -v "$(pwd)"/runs:/usr/src/app/runs 
+      $YOLOV5_IMAGE 
+      python3 val.py
+      --data ${data.val}
+      --weights ${model.weights_best}
+      --batch-size  ${val.batch_size}
+      --img-size ${val.img_size}
+      --conf-thres ${val.conf_thres}
+      --iou-thres ${val.iou_thres}
+      --max-det ${val.max_det}
+      --task val
+      --verbose 
+      --save-conf 
+      --save-json  
+      --project ${project.dir}
+      --name ${val.stage_name}
+      --exist-ok
+    params:
+      - val
+    # deps: 
+    #   - ${project.dir}/${val.stage_name}/confusion
+    # # TODO: add weights from the last stage and other params
+    
+    # outs:
+    #   # TODO: optional outputs are commented, cause pipeline fails when they are not created
+      # see https://github.com/iterative/dvc/issues/4410
+      # - runs/test/F1_curve.png
+      # - runs/test/P_curve.png
+      # - runs/test/confusion_matrix.png
+      # - runs/test/test_batch0_pred.jpg
+      # # - runs/test/PR_curve.png
+      # # - runs/test/R_curve.png
+      # - runs/test/test_batch0_labels.jpg
+
+  # export:
+  #   params:
+  #     - params.yaml:
+  #         - export
+  #   deps:
+  #     - models/export.py
+  #     - ${export.weights}
+  #   cmd: python models/export.py --params params.yaml
+  #   outs:
+  #     - runs/export
+  #   # TODO: I'm not specifying outputs because they are optional
+  #   # outs:
+  #   #   - runs/train/weights/best.torchscript.pt
+  #   #   - runs/train/weights/best.onnx
+  #   #   - runs/train/weights/best.mlmodel
+  
