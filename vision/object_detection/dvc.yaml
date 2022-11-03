@@ -1,19 +1,49 @@
 stages:
+
   # download:
   #   params:
-  #     - params.yaml:
-  #       - download
-  #   cmd: bash data/scripts/get_${download.dataset}.sh
-  #   outs:
-  #     - data/${download.dataset}
-  # train:
-  #   params:
-  #     - params.yaml:
-  #         - train
+  #     - data
   #   deps:
-  #     - data/${download.dataset}
-  #     - train.py
-  #   cmd: python train.py --params params.yaml
+  #     - download_dataset.sh
+  # cmd: >-
+  #   docker run -ti
+  #   -u $(id -u)
+  #   -v $(pwd)/datasets:/usr/src/datasets/
+  #   \${YOLOV5_IMAGE}
+  #   bash -c "apt-get install unzip && data/scripts/get_${data.dataset}.sh"
+  #   outs:
+  #     - ./datasets/${data.dataset}
+
+  train:
+    params:
+      - train
+    cmd:  >-
+      docker run -it
+      -v "$(pwd)"/datasets:/usr/src/datasets 
+      -v "$(pwd)"/runs:/usr/src/app/runs 
+      \${YOLOV5_IMAGE} 
+      python3 train.py
+      --weights ${train.weights}
+      --data ${data.train}
+      --hyp ${train.hyp}
+      --epochs ${train.epochs}
+      --batch-size ${train.batch_size}
+      --img-size ${train.img_size}
+      --evolve ${train.evolve}
+      --cache ${train.cache}
+      --optimizer ${train.optimizer}
+      --workers ${train.workers}
+      --project ${train.project}
+      --name ${train.name}
+      --label-smoothing ${train.label_smoothing}
+      --save-period ${train.save_period}
+      --local_rank ${train.local_rank}
+      --entity ${train.entity}
+      --upload_dataset ${train.upload_dataset}
+      --bbox_interval ${train.bbox_interval}
+      --artifact_alias ${train.artifact_alias}
+      
+
   #   outs:
   #     - runs/train/weights/last.pt  # :
   #         # checkpoint: true
@@ -44,7 +74,7 @@ stages:
       $YOLOV5_IMAGE 
       python3 val.py
       --data ${data.val}
-      --weights ${model.weights_best}
+      --weights ${val.weights}
       --batch-size  ${val.batch_size}
       --img-size ${val.img_size}
       --conf-thres ${val.conf_thres}

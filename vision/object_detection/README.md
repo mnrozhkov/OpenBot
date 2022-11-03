@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 
 ## Install & Setup Docker environment
-Reference: [YoloV5 Docker Quickstart](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) 
+<!-- Reference: [YoloV5 Docker Quickstart](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) 
 
 GPU-based: 
 
@@ -26,7 +26,7 @@ setup.sh --env [ENVIRONMENT]  # virtual-env, docker-gpu, docker-cpu, all
 
 ```bash
 activate.sh --env [ENVIRONMENT]  # virtual-env, docker-gpu, docker-cpu, all 
-```
+``` -->
 
 Test installation
 ```bash 
@@ -52,3 +52,10 @@ docker run -it --ipc=host \
 ```
 inside interactive docker container session:  
     `python3 val.py --weights yolov5s.pt` 
+
+
+# Run DVC pipeline
+
+```bash
+./run_pipeline.sh
+```
