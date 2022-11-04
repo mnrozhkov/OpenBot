@@ -6,13 +6,12 @@ stages:
   val:
     cmd: docker run -it --ipc=host  -v "$(pwd)"/data_config:/usr/src/app/data_config
       -v "$(pwd)"/datasets:/usr/src/datasets  -v "$(pwd)"/runs:/usr/src/app/runs  $YOLOV5_IMAGE  python3
-      val.py --data data/coco128.yaml --weights yolov5s.pt --batch-size  32 --img-size
-      640 --conf-thres 0.001 --iou-thres 0.6 --max-det 50 --task val --verbose  --save-conf  --save-json   --project
+      val.py --data data/coco128.yaml --weights runs/train/exp/weights/best.pt --batch-size  32
+      --img-size 640 --conf-thres 0.001 --iou-thres 0.6 --max-det 50 --task val --verbose  --save-conf  --save-json   --project
       . --name runs/val --exist-ok
     params:
       params.yaml:
         val:
-          weights: yolov5s.pt
           batch_size: 32
           img_size: 640
           conf_thres: 0.001
@@ -39,44 +38,25 @@ stages:
   train:
     cmd: docker run -it -v "$(pwd)"/datasets:/usr/src/datasets  -v "$(pwd)"/runs:/usr/src/app/runs  ${YOLOV5_IMAGE}  python3
       train.py --weights yolov5s.pt --data data/coco128.yaml --hyp data/hyps/hyp.scratch-low.yaml
-      --epochs 4 --batch-size 16 --img-size 32 --evolve 3 --cache disk --optimizer
-      Adam --workers 8 --project runs/train --name exp --label-smoothing 0.0 --save-period
-      -1 --local_rank -1 --entity None --upload_dataset false --bbox_interval -1 --artifact_alias
-      latest --nosave
+      --epochs 4 --batch-size 16 --img-size 32 --optimizer Adam --workers 8 --project
+      runs/train --name exp --label-smoothing 0.0 --save-period -1 --local_rank -1
+      --entity None --bbox_interval -1 --artifact_alias latest --exist-ok
     params:
       params.yaml:
         train:
           weights: yolov5s.pt
-          cfg: ''
           data: data/coco128.yaml
           hyp: data/hyps/hyp.scratch-low.yaml
           epochs: 4
           batch_size: 16
           img_size: 32
-          rect: false
-          resume: false
-          nosave: false
-          notest: false
-          noautoanchor: false
-          evolve: 3
-          bucket: ''
-          cache: disk
-          image_weights: false
-          device: ''
-          multi_scale: false
-          single_cls: false
           optimizer: Adam
-          sync_bn: false
           local_rank: -1
           workers: 8
           project: runs/train
           entity:
           name: exp
-          exist_ok: false
-          quad: false
-          cos_lr: false
           label_smoothing: 0.0
-          upload_dataset: false
           bbox_interval: -1
           save_period: -1
           artifact_alias: latest

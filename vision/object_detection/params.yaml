@@ -13,42 +13,43 @@ data:
 
 train:
   weights: 'yolov5s.pt' # initial weights path
-  cfg: '' # model.yaml path
+  # cfg: '' # model.yaml path
   data: 'data/coco128.yaml' # data.yaml path
   hyp: 'data/hyps/hyp.scratch-low.yaml' # hyperparameters path
   epochs: 4
   batch_size: 16 # total batch size for all GPUs
   img_size: 32 # [train, test] image sizes
-  rect: false # rectangular training
-  resume: false # resume most recent training
-  nosave: false # only save final checkpoint
-  notest: false # only test final epoch
-  noautoanchor: false # disable autoanchor check
-  evolve: 3 # evolve hyperparameters
-  bucket: '' # gsutil bucket
-  cache: disk # cache images for faster training
-  image_weights: false # use weighted image selection for training
-  device: '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
-  multi_scale: false # vary img-size +/- 50%%
-  single_cls: false # train multi-class data as single-class
+  # rect: false # rectangular training
+  # resume: false # resume most recent training
+  # nosave: false # only save final checkpoint
+  # notest: false # only test final epoch
+  # noautoanchor: false # disable autoanchor check
+  # evolve: 3 # evolve hyperparameters
+  # bucket: '' # gsutil bucket
+  # cache: disk # cache images for faster training
+  # image_weights: false # use weighted image selection for training
+  # device: '' # cuda device, i.e. 0 or 0,1,2,3 or cpu
+  # multi_scale: false # vary img-size +/- 50%%
+  # single_cls: false # train multi-class data as single-class
   optimizer: Adam # use torch.optim.Adam() optimizer
-  sync_bn: false # use SyncBatchNorm, only available in DDP mode
+  # sync_bn: false # use SyncBatchNorm, only available in DDP mode
   local_rank: -1 # DDP parameter, do not modify
   workers: 8 # maximum number of dataloader workers
   project: 'runs/train' # save to project/name
   entity: null # W&B entity
   name: 'exp' # save to project/name
-  exist_ok: false # existing project/name ok, do not increment
-  quad: false # quad dataloader
-  cos_lr: false # linear LR
+  # exist_ok: false # existing project/name ok, do not increment
+  # quad: false # quad dataloader
+  # cos_lr: false # linear LR
   label_smoothing: 0.0 # Label smoothing epsilon
-  upload_dataset: false # Upload dataset as W&B artifact table
+  # upload_dataset: false # Upload dataset as W&B artifact table
   bbox_interval: -1 # Set bounding-box image logging interval for W&B
   save_period: -1 # Log model after every "save_period" epoch
   artifact_alias: latest # version of dataset artifact to be used
+  # yolo_flags: '--exists-ok --resume'  # TODO: implement
+  
   
 val:
-  weights: 'yolov5s.pt'
   batch_size: 32 # size of each image batch
   img_size: 640 # inference size (pixels)
   conf_thres: 0.001 # object confidence threshold

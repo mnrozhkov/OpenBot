@@ -29,8 +29,6 @@ stages:
       --epochs ${train.epochs}
       --batch-size ${train.batch_size}
       --img-size ${train.img_size}
-      --evolve ${train.evolve}
-      --cache ${train.cache}
       --optimizer ${train.optimizer}
       --workers ${train.workers}
       --project ${train.project}
@@ -39,10 +37,9 @@ stages:
       --save-period ${train.save_period}
       --local_rank ${train.local_rank}
       --entity ${train.entity}
-      --upload_dataset ${train.upload_dataset}
       --bbox_interval ${train.bbox_interval}
       --artifact_alias ${train.artifact_alias}
-      
+      --exist-ok
 
   #   outs:
   #     - runs/train/weights/last.pt  # :
@@ -74,7 +71,7 @@ stages:
       $YOLOV5_IMAGE 
       python3 val.py
       --data ${data.val}
-      --weights ${val.weights}
+      --weights ${train.project}/${train.name}/weights/best.pt
       --batch-size  ${val.batch_size}
       --img-size ${val.img_size}
       --conf-thres ${val.conf_thres}

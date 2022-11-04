@@ -2,4 +2,5 @@
 
 export $(grep -v '#.*' .env | xargs)
 
-dvc exp run
+dvc repro -s train
+dvc repro -s val
