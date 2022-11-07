@@ -53,8 +53,27 @@ docker run -it --ipc=host \
 inside interactive docker container session:  
     `python3 val.py --weights yolov5s.pt` 
 
+## Build custom Docker image
 
-# Run DVC pipeline
+```bash
+./build_image.sh
+```
+
+## Create `.env`
+
+```bash
+touch .env
+```
+
+Add to `.env` custom image name:
+
+`.env`
+```dotenv
+YOLOV5_IMAGE=openbot-vision-object-detection:latest
+```
+
+
+## Run DVC pipeline
 
 ```bash
 ./run_pipeline.sh
