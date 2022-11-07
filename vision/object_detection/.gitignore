@@ -1,6 +1,8 @@
+.env
 .venv/*
 yolov5/*
 data_confgi/*
 datasets/*
+models/*
 runs/*
 *.pt

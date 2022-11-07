@@ -9,6 +9,10 @@ stages:
       val.py --data data/coco128.yaml --weights runs/train/exp/weights/best.pt --batch-size  32
       --img-size 640 --conf-thres 0.001 --iou-thres 0.6 --max-det 50 --task val --verbose  --save-conf  --save-json   --project
       . --name runs/val --exist-ok
+    deps:
+    - path: runs/train/exp/weights/best.pt
+      md5: 2dbf9129979e9dccd0edae05115ceace
+      size: 14641277
     params:
       params.yaml:
         val:
@@ -36,18 +40,26 @@ stages:
       size: 7003402
       nfiles: 258
   train:
-    cmd: docker run -it -v "$(pwd)"/datasets:/usr/src/datasets  -v "$(pwd)"/runs:/usr/src/app/runs  ${YOLOV5_IMAGE}  python3
-      train.py --weights yolov5s.pt --data data/coco128.yaml --hyp data/hyps/hyp.scratch-low.yaml
-      --epochs 4 --batch-size 16 --img-size 32 --optimizer Adam --workers 8 --project
-      runs/train --name exp --label-smoothing 0.0 --save-period -1 --local_rank -1
-      --entity None --bbox_interval -1 --artifact_alias latest --exist-ok
+    cmd:
+    - "docker run -it \\\n  -v \"$(pwd)\"/datasets:/usr/src/datasets \\\n  -v \"$(pwd)\"\
+      /models/weights:/usr/src/app/models/weights \\\n  -v \"$(pwd)\"/runs:/usr/src/app/runs\
+      \ \\\n  ${YOLOV5_IMAGE} /bin/bash -c \\\n    \"if [ -f /usr/src/app/models/weights/yolov5s.pt\
+      \ ]; then\n      ln -s /usr/src/app/models/weights/yolov5s.pt /usr/src/app\n\
+      \    fi;\n\n    python3 train.py \\\n    --weights yolov5s.pt \\\n    --data\
+      \ data/coco128.yaml \\\n    --hyp data/hyps/hyp.scratch-low.yaml \\\n    --epochs\
+      \ 3 \\\n    --batch-size 16 \\\n    --img-size 32 \\\n    --optimizer Adam \\\
+      \n    --workers 8 \\\n    --project runs/train \\\n    --name exp \\\n    --label-smoothing\
+      \ 0.0 \\\n    --save-period -1 \\\n    --local_rank -1 \\\n    --entity None\
+      \ \\\n    --bbox_interval -1 \\\n    --artifact_alias latest \\\n    --exist-ok\n\
+      \n    if [ ! -f /usr/src/app/models/weights/yolov5s.pt ]; then\n      cp /usr/src/app/yolov5s.pt\
+      \ /usr/src/app/models/weights/\n    fi;\"\n"
     params:
       params.yaml:
         train:
           weights: yolov5s.pt
           data: data/coco128.yaml
           hyp: data/hyps/hyp.scratch-low.yaml
-          epochs: 4
+          epochs: 3
           batch_size: 16
           img_size: 32
           optimizer: Adam
@@ -60,3 +72,11 @@ stages:
           bbox_interval: -1
           save_period: -1
           artifact_alias: latest
+          yolo_flags: --exist-ok
+    outs:
+    - path: runs/train/exp/weights/best.pt
+      md5: 2dbf9129979e9dccd0edae05115ceace
+      size: 14641277
+    - path: runs/train/exp/weights/last.pt
+      md5: 298b6e0dc46c69d9064b5bc0c33f6199
+      size: 14641277
