@@ -1,17 +1,115 @@
 schema: '2.0'
 stages:
-  test:
-    cmd: docker run -it --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets  -v "$(pwd)"/runs:/usr/src/app/runs  $YOLOV5_IMAGE  python3
-      val.py --weights yolov5s.pt --exist-ok
+  download_model:
+    cmd:
+    - "docker run -it \\\n  -v \"$(pwd)\"/models/weights:/usr/src/app/models/weights\
+      \ \\\n  ${YOLOV5_IMAGE} \\\n  python3 -c \"from utils.downloads import attempt_download;\
+      \ attempt_download(f'models/weights/yolov5s.pt')\"\n"
+    params:
+      params.yaml:
+        train:
+          weights_dir: models/weights
+          weights: yolov5s.pt
+          data: data/coco128.yaml
+          hyp: data/hyps/hyp.scratch-low.yaml
+          epochs: 3
+          batch_size: 16
+          img_size: 32
+          optimizer: Adam
+          workers: 8
+          project: runs/train
+          entity:
+          label_smoothing: 0.0
+          bbox_interval: -1
+          save_period: -1
+          artifact_alias: latest
+          yolo_flags: --exist-ok
+    outs:
+    - path: models/weights/yolov5s.pt
+      md5: 523cc152dea05959e1a07f04fb43ebcf
+      size: 14808437
+  train:
+    cmd:
+    - "docker run -it \\\n  -v \"$(pwd)\"/datasets:/usr/src/datasets \\\n  -v \"$(pwd)\"\
+      /models/weights:/usr/src/app/models/weights \\\n  -v \"$(pwd)\"/runs:/usr/src/app/runs\
+      \ \\\n  ${YOLOV5_IMAGE} /bin/bash -c \\\n    \"\n    python3 train.py \\\n \
+      \   --weights models/weights/yolov5s.pt \\\n    --data data/coco128.yaml \\\n\
+      \    --hyp data/hyps/hyp.scratch-low.yaml \\\n    --epochs 3 \\\n    --batch-size\
+      \ 16 \\\n    --img-size 32 \\\n    --optimizer Adam \\\n    --workers 8 \\\n\
+      \    --project runs/train \\\n    --name exp \\\n    --label-smoothing 0.0 \\\
+      \n    --save-period -1 \\\n    --entity None \\\n    --bbox_interval -1 \\\n\
+      \    --artifact_alias latest \\\n    --exist-ok\n    \"\n"
+    deps:
+    - path: models/weights/yolov5s.pt
+      md5: 523cc152dea05959e1a07f04fb43ebcf
+      size: 14808437
+    params:
+      params.yaml:
+        train:
+          weights_dir: models/weights
+          weights: yolov5s.pt
+          data: data/coco128.yaml
+          hyp: data/hyps/hyp.scratch-low.yaml
+          epochs: 3
+          batch_size: 16
+          img_size: 32
+          optimizer: Adam
+          workers: 8
+          project: runs/train
+          entity:
+          label_smoothing: 0.0
+          bbox_interval: -1
+          save_period: -1
+          artifact_alias: latest
+          yolo_flags: --exist-ok
+    outs:
+    - path: runs/train/exp/F1_curve.png
+      md5: 4b99b44029e01ca63f17e09ee7a6a4e3
+      size: 82422
+    - path: runs/train/exp/PR_curve.png
+      md5: 2d281e4920870997b9b476d1da962d00
+      size: 74482
+    - path: runs/train/exp/P_curve.png
+      md5: c2fbf15e1e6cbf3e8c9801fa585daf48
+      size: 140331
+    - path: runs/train/exp/R_curve.png
+      md5: cc4f7fe03495d687257756fb66814c27
+      size: 88699
+    - path: runs/train/exp/confusion_matrix.png
+      md5: 2c8e50429e66277a0865db53ab97c3b7
+      size: 553900
+    - path: runs/train/exp/hyp.yaml
+      md5: 0b99b67c046abfdcc69005b3d8db9e83
+      size: 373
+    - path: runs/train/exp/labels.jpg
+      md5: dcd2672956db13bacd2d56ea18a74186
+      size: 245726
+    - path: runs/train/exp/labels_correlogram.jpg
+      md5: aaf6ec90cd751d5f88fad529d0ca5147
+      size: 211515
+    - path: runs/train/exp/results.csv
+      md5: 35b1acb13ec13a0e39678114ff147dbe
+      size: 1176
+    - path: runs/train/exp/results.png
+      md5: 4eccd035d8b3d3235a77680a42e34bab
+      size: 268274
+    - path: runs/train/exp/weights/best.pt
+      md5: d00e3533d9bb163073bc3b5e31a92ce2
+      size: 14641277
+    - path: runs/train/exp/weights/last.pt
+      md5: 38eaecc816d9bc60a8ce19ed5c5d8d8c
+      size: 14641277
   val:
-    cmd: docker run -it --ipc=host  -v "$(pwd)"/data_config:/usr/src/app/data_config
-      -v "$(pwd)"/datasets:/usr/src/datasets  -v "$(pwd)"/runs:/usr/src/app/runs  $YOLOV5_IMAGE  python3
-      val.py --data data/coco128.yaml --weights runs/train/exp/weights/best.pt --batch-size  32
-      --img-size 640 --conf-thres 0.001 --iou-thres 0.6 --max-det 50 --task val --verbose  --save-conf  --save-json   --project
-      . --name runs/val --exist-ok
+    cmd:
+    - "docker run -it --ipc=host \\\n  -v \"$(pwd)\"/datasets:/usr/src/datasets \\\
+      \n  -v \"$(pwd)\"/runs:/usr/src/app/runs \\\n  ${YOLOV5_IMAGE} \\\n    python3\
+      \ val.py \\\n    --data data/coco128.yaml \\\n    --weights runs/train/exp/weights/best.pt\
+      \ \\\n    --batch-size  32 \\\n    --img-size 640 \\\n    --conf-thres 0.001\
+      \ \\\n    --iou-thres 0.6 \\\n    --max-det 50 \\\n    --task val \\\n    --project\
+      \ runs/val \\\n    --name exp \\\n    --verbose --save-conf --save-json --exist-ok\n"
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 2dbf9129979e9dccd0edae05115ceace
+      md5: d00e3533d9bb163073bc3b5e31a92ce2
       size: 14641277
     params:
       params.yaml:
@@ -21,62 +119,73 @@ stages:
           conf_thres: 0.001
           iou_thres: 0.6
           max_det: 50
-          project: .
-          stage_name: runs/val
-  download:
-    cmd: ./download_dataset.sh coco128
-    deps:
-    - path: download_dataset.sh
-      md5: a609c287622cdd5838996eff5fc04ac2
-      size: 253
-    params:
-      params.yaml:
-        data:
-          dataset: coco128
-          val: data_config/coco128.yaml
-    outs:
-    - path: ./datasets/coco128
-      md5: 01c881881d985711aa5ebb5f5f4e8722.dir
-      size: 7003402
-      nfiles: 258
-  train:
-    cmd:
-    - "docker run -it \\\n  -v \"$(pwd)\"/datasets:/usr/src/datasets \\\n  -v \"$(pwd)\"\
-      /models/weights:/usr/src/app/models/weights \\\n  -v \"$(pwd)\"/runs:/usr/src/app/runs\
-      \ \\\n  ${YOLOV5_IMAGE} /bin/bash -c \\\n    \"if [ -f /usr/src/app/models/weights/yolov5s.pt\
-      \ ]; then\n      ln -s /usr/src/app/models/weights/yolov5s.pt /usr/src/app\n\
-      \    fi;\n\n    python3 train.py \\\n    --weights yolov5s.pt \\\n    --data\
-      \ data/coco128.yaml \\\n    --hyp data/hyps/hyp.scratch-low.yaml \\\n    --epochs\
-      \ 3 \\\n    --batch-size 16 \\\n    --img-size 32 \\\n    --optimizer Adam \\\
-      \n    --workers 8 \\\n    --project runs/train \\\n    --name exp \\\n    --label-smoothing\
-      \ 0.0 \\\n    --save-period -1 \\\n    --local_rank -1 \\\n    --entity None\
-      \ \\\n    --bbox_interval -1 \\\n    --artifact_alias latest \\\n    --exist-ok\n\
-      \n    if [ ! -f /usr/src/app/models/weights/yolov5s.pt ]; then\n      cp /usr/src/app/yolov5s.pt\
-      \ /usr/src/app/models/weights/\n    fi;\"\n"
-    params:
-      params.yaml:
-        train:
-          weights: yolov5s.pt
-          data: data/coco128.yaml
-          hyp: data/hyps/hyp.scratch-low.yaml
-          epochs: 3
-          batch_size: 16
-          img_size: 32
-          optimizer: Adam
-          local_rank: -1
           workers: 8
-          project: runs/train
-          entity:
-          name: exp
-          label_smoothing: 0.0
-          bbox_interval: -1
-          save_period: -1
-          artifact_alias: latest
-          yolo_flags: --exist-ok
+          project: runs/val
+          yolo_flags: --verbose --save-conf --save-json --exist-ok
     outs:
+    - path: runs/val/exp/F1_curve.png
+      md5: 64387e78a97db563ccf28c9bbbf8ab29
+      size: 58718
+    - path: runs/val/exp/PR_curve.png
+      md5: 5526b42774145f95d9ef4d643b9c173d
+      size: 67751
+    - path: runs/val/exp/P_curve.png
+      md5: db421cfba20734db862d092d74313f84
+      size: 79428
+    - path: runs/val/exp/R_curve.png
+      md5: 402846b83800e896e23bbb1aa57082ec
+      size: 60739
+    - path: runs/val/exp/best_predictions.json
+      md5: 631924abe99589e924d7eebdb0730db6
+      size: 58597
+    - path: runs/val/exp/confusion_matrix.png
+      md5: 06c16f42c3710b7dedbebea6503666db
+      size: 553249
+  exports@2:
+    cmd:
+    - "docker run -it --ipc=host \\\n-v \"$(pwd)\"/datasets:/usr/src/datasets \\\n\
+      -v \"$(pwd)\"/runs:/usr/src/app/runs \\\n${YOLOV5_IMAGE} \\\n  python3 export.py\
+      \ \\\n  --data data/coco128.yaml \\\n  --weights runs/train/exp/weights/best.pt\
+      \ \\\n  --img-size 640 \\\n  --batch-size  1 \\\n  --opset 12 \\\n  --topk-per-class\
+      \ 100 \\\n  --topk-all 100 \\\n  --iou-thres 0.45 \\\n  --conf-thres 0.25 \\\
+      \n  --include coreml \\\n  --verbose\n"
+    deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 2dbf9129979e9dccd0edae05115ceace
+      md5: d00e3533d9bb163073bc3b5e31a92ce2
       size: 14641277
-    - path: runs/train/exp/weights/last.pt
-      md5: 298b6e0dc46c69d9064b5bc0c33f6199
+    outs:
+    - path: runs/train/exp/weights/best.mlmodel
+      md5: dc156fdc9aa2a99a4babdc7a3cc0782b
+      size: 29321907
+  exports@1:
+    cmd:
+    - "docker run -it --ipc=host \\\n-v \"$(pwd)\"/datasets:/usr/src/datasets \\\n\
+      -v \"$(pwd)\"/runs:/usr/src/app/runs \\\n${YOLOV5_IMAGE} \\\n  python3 export.py\
+      \ \\\n  --data data/coco128.yaml \\\n  --weights runs/train/exp/weights/best.pt\
+      \ \\\n  --img-size 640 \\\n  --batch-size  1 \\\n  --opset 12 \\\n  --topk-per-class\
+      \ 100 \\\n  --topk-all 100 \\\n  --iou-thres 0.45 \\\n  --conf-thres 0.25 \\\
+      \n  --include onnx \\\n  --verbose\n"
+    deps:
+    - path: runs/train/exp/weights/best.pt
+      md5: d00e3533d9bb163073bc3b5e31a92ce2
       size: 14641277
+    outs:
+    - path: runs/train/exp/weights/best.onnx
+      md5: da7a36060d6536df8ce4d64688f1ee9f
+      size: 29352431
+  exports@0:
+    cmd:
+    - "docker run -it --ipc=host \\\n-v \"$(pwd)\"/datasets:/usr/src/datasets \\\n\
+      -v \"$(pwd)\"/runs:/usr/src/app/runs \\\n${YOLOV5_IMAGE} \\\n  python3 export.py\
+      \ \\\n  --data data/coco128.yaml \\\n  --weights runs/train/exp/weights/best.pt\
+      \ \\\n  --img-size 640 \\\n  --batch-size  1 \\\n  --opset 12 \\\n  --topk-per-class\
+      \ 100 \\\n  --topk-all 100 \\\n  --iou-thres 0.45 \\\n  --conf-thres 0.25 \\\
+      \n  --include torchscript \\\n  --verbose\n"
+    deps:
+    - path: runs/train/exp/weights/best.pt
+      md5: d00e3533d9bb163073bc3b5e31a92ce2
+      size: 14641277
+    outs:
+    - path: runs/train/exp/weights/best.torchscript
+      md5: 6bac6a12f13b9029ca02ef916da29646
+      size: 29378005
