@@ -16,3 +16,6 @@ wandb/
 
 # build
 /bin
+
+# vision 
+vision/object_detection/yolov5

@@ -1,0 +1,6 @@
+# DVC 
+dvc[s3]==2.31.0
+dvclive==0.12.1
+
+# ML
+pycocotools==2.0.5
