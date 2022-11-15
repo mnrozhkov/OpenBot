@@ -1,5 +1,3 @@
-
-
 ## Install & Setup virtual environment
 Build DEV environment (Python Virtual Environment)
 Create and activate virtual environment for local development

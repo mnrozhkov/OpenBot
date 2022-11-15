@@ -3,8 +3,8 @@ stages:
   download_model:
     cmd:
     - "docker run -it \\\n  -v \"$(pwd)\"/models/weights:/usr/src/app/models/weights\
-      \ \\\n  ${YOLOV5_IMAGE} \\\n  python3 -c \"from utils.downloads import attempt_download;\
-      \ attempt_download(f'models/weights/yolov5s.pt')\"\n"
+      \ \\\n  openbot-vision-object-detection:latest \\\n  python3 -c \"from utils.downloads\
+      \ import attempt_download; attempt_download(f'models/weights/yolov5s.pt')\"\n"
     params:
       params.yaml:
         train:
@@ -29,13 +29,12 @@ stages:
       md5: 523cc152dea05959e1a07f04fb43ebcf
       size: 14808437
   train:
-    cmd: "docker run -it -v \"$(pwd)\"/datasets:/usr/src/datasets -v \"$(pwd)\"/models/weights:/usr/src/app/models/weights\
-      \  -v \"$(pwd)\"/runs:/usr/src/app/runs  openbot-vision-object-detection:latest\
-      \  python3 train.py  --weights models/weights/yolov5s.pt  --data data/coco128.yaml\
-      \  --hyp data/hyps/hyp.scratch-low.yaml  --epochs 3  --batch-size 16  --img-size\
-      \ 32  --optimizer Adam  --workers 8  --project runs/train  --name exp  --label-smoothing\
-      \ 0.0  --save-period -1  --entity None  --bbox_interval -1  --artifact_alias\
-      \ latest --exist-ok\n  "
+    cmd: docker run -it -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/models/weights:/usr/src/app/models/weights  -v
+      "$(pwd)"/runs:/usr/src/app/runs  openbot-vision-object-detection:latest  python3
+      train.py  --weights models/weights/yolov5s.pt  --data data/coco128.yaml  --hyp
+      data/hyps/hyp.scratch-low.yaml  --epochs 3  --batch-size 16  --img-size 32  --optimizer
+      Adam  --workers 8  --project runs/train  --name exp  --label-smoothing 0.0  --save-period
+      -1  --entity None  --bbox_interval -1  --artifact_alias latest --exist-ok
     deps:
     - path: models/weights/yolov5s.pt
       md5: 523cc152dea05959e1a07f04fb43ebcf
@@ -91,10 +90,10 @@ stages:
       md5: 0848455b9b8550f3538ca898ecafa954
       size: 291783
     - path: runs/train/exp/weights/best.pt
-      md5: 729a97c766cb5440d061c6abd588c9e3
+      md5: 52bfc64f359a905efbeb3abbdc83fa9f
       size: 14641277
     - path: runs/train/exp/weights/last.pt
-      md5: c6e628fc895392572b1e6eafdbf98c8d
+      md5: e91dee875839ec54fb3ddde8ab2e1a7c
       size: 14641277
   val:
     cmd: docker run -it --ipc=host -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
@@ -104,7 +103,7 @@ stages:
       --verbose --save-conf --save-json --exist-ok
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 729a97c766cb5440d061c6abd588c9e3
+      md5: 52bfc64f359a905efbeb3abbdc83fa9f
       size: 14641277
     params:
       params.yaml:
@@ -119,23 +118,23 @@ stages:
           yolo_flags: --verbose --save-conf --save-json --exist-ok
     outs:
     - path: runs/val/exp/F1_curve.png
-      md5: bd35ccadfb36587f67eafe343010aa1a
-      size: 59486
+      md5: 425605132f3f5e88a485dfdbb34b22f3
+      size: 59445
     - path: runs/val/exp/PR_curve.png
-      md5: e261d81018537b488d15a42a7fdee3e3
-      size: 64833
+      md5: fb05c9f882db817675711e80c9fcf1ae
+      size: 68583
     - path: runs/val/exp/P_curve.png
-      md5: c6a0ee214f7a4215a3cb275f4cf1e96f
-      size: 85252
+      md5: 54b74dcee12a8fb8ffd3f27cf3bec4b6
+      size: 85645
     - path: runs/val/exp/R_curve.png
       md5: 962dc460a85e18ec0c2a2961861ed63f
       size: 61054
     - path: runs/val/exp/best_predictions.json
-      md5: 843c75af18f5e7cdaa94ba2b9b1e880f
-      size: 43870
+      md5: b841283f28cb1f661f4cd0503c7f8632
+      size: 38969
     - path: runs/val/exp/confusion_matrix.png
-      md5: 609767d07c9df46877c024efa2eb0af4
-      size: 553395
+      md5: 15397306a40af8e9c5e9b91131a7298c
+      size: 553314
   exports@2:
     cmd: docker run -it --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
       openbot-vision-object-detection:latest python3 export.py  --data data/coco128.yaml
@@ -144,7 +143,7 @@ stages:
       coreml --verbose
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 729a97c766cb5440d061c6abd588c9e3
+      md5: 52bfc64f359a905efbeb3abbdc83fa9f
       size: 14641277
     outs:
     - path: runs/train/exp/weights/best.mlmodel
@@ -158,7 +157,7 @@ stages:
       onnx --verbose
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 729a97c766cb5440d061c6abd588c9e3
+      md5: 52bfc64f359a905efbeb3abbdc83fa9f
       size: 14641277
     outs:
     - path: runs/train/exp/weights/best.onnx
@@ -172,7 +171,7 @@ stages:
       torchscript --verbose
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 729a97c766cb5440d061c6abd588c9e3
+      md5: 52bfc64f359a905efbeb3abbdc83fa9f
       size: 14641277
     outs:
     - path: runs/train/exp/weights/best.torchscript

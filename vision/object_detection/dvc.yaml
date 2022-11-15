@@ -5,30 +5,14 @@ vars:
 
 stages:
 
-  # download:
-  #   params:
-  #     - data
-  #   deps:
-  #     - download_dataset.sh
-  # cmd: >-
-  #   docker run -ti
-  #   -u $(id -u)
-  #   -v $(pwd)/datasets:/usr/src/datasets/
-  #   \${YOLOV5_IMAGE}
-  #   bash -c "apt-get install unzip && data/scripts/get_${data.dataset}.sh"
-  #   outs:
-  #     - ./datasets/${data.dataset}
-
-
   download_model:
     params:
       - train
-
     cmd:
     - |
       docker run -it \
         -v "$(pwd)"/models/weights:${docker_weights} \
-        \${YOLOV5_IMAGE} \
+        ${YOLOV5_IMAGE} \
         python3 -c "from utils.downloads import attempt_download; attempt_download(f'models/weights/${train.weights}')"
     outs:
       - models/weights/${train.weights}:
