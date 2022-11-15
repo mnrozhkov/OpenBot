@@ -1,6 +1,7 @@
 vars:
   - docker_workdir: /usr/src/app
   - docker_weights: /usr/src/app/models/weights
+  - YOLOV5_IMAGE: openbot-vision-object-detection:latest
 
 stages:
 
@@ -36,32 +37,29 @@ stages:
   train:
     params:
       - train
-    cmd:
-    - |
-      docker run -it \
-        -v "$(pwd)"/datasets:/usr/src/datasets \
-        -v "$(pwd)"/models/weights:${docker_weights} \
-        -v "$(pwd)"/runs:/usr/src/app/runs \
-        \${YOLOV5_IMAGE} /bin/bash -c \
-          "
-          python3 train.py \
-          --weights ${train.weights_dir}/${train.weights} \
-          --data ${data.train} \
-          --hyp ${train.hyp} \
-          --epochs ${train.epochs} \
-          --batch-size ${train.batch_size} \
-          --img-size ${train.img_size} \
-          --optimizer ${train.optimizer} \
-          --workers ${train.workers} \
-          --project ${train.project} \
-          --name ${exp.name} \
-          --label-smoothing ${train.label_smoothing} \
-          --save-period ${train.save_period} \
-          --entity ${train.entity} \
-          --bbox_interval ${train.bbox_interval} \
-          --artifact_alias ${train.artifact_alias} \
-          ${train.yolo_flags}
-          "
+    cmd: >- 
+      docker run -it
+      -v "$(pwd)"/datasets:/usr/src/datasets
+      -v "$(pwd)"/models/weights:${docker_weights} 
+      -v "$(pwd)"/runs:/usr/src/app/runs 
+      ${YOLOV5_IMAGE} 
+      python3 train.py 
+      --weights ${train.weights_dir}/${train.weights} 
+      --data ${data.train} 
+      --hyp ${train.hyp} 
+      --epochs ${train.epochs} 
+      --batch-size ${train.batch_size} 
+      --img-size ${train.img_size} 
+      --optimizer ${train.optimizer} 
+      --workers ${train.workers} 
+      --project ${train.project} 
+      --name ${exp.name} 
+      --label-smoothing ${train.label_smoothing} 
+      --save-period ${train.save_period} 
+      --entity ${train.entity} 
+      --bbox_interval ${train.bbox_interval} 
+      --artifact_alias ${train.artifact_alias}
+      ${train.yolo_flags}
     deps:
       - models/weights/${train.weights}
     outs:
@@ -91,24 +89,23 @@ stages:
           cache: false
 
   val:
-    cmd:
-    - |
-      docker run -it --ipc=host \
-        -v "$(pwd)"/datasets:/usr/src/datasets \
-        -v "$(pwd)"/runs:/usr/src/app/runs \
-        \${YOLOV5_IMAGE} \
-          python3 val.py \
-          --data ${data.val} \
-          --weights ${train.project}/${exp.name}/weights/best.pt \
-          --batch-size  ${val.batch_size} \
-          --img-size ${val.img_size} \
-          --conf-thres ${val.conf_thres} \
-          --iou-thres ${val.iou_thres} \
-          --max-det ${val.max_det} \
-          --task val \
-          --project ${val.project} \
-          --name ${exp.name} \
-          ${val.yolo_flags}
+    cmd: >- 
+      docker run -it --ipc=host
+      -v "$(pwd)"/datasets:/usr/src/datasets
+      -v "$(pwd)"/runs:/usr/src/app/runs
+      ${YOLOV5_IMAGE}
+      python3 val.py
+      --data ${data.val}
+      --weights ${train.project}/${exp.name}/weights/best.pt
+      --batch-size  ${val.batch_size}
+      --img-size ${val.img_size}
+      --conf-thres ${val.conf_thres}
+      --iou-thres ${val.iou_thres}
+      --max-det ${val.max_det}
+      --task val
+      --project ${val.project}
+      --name ${exp.name}
+      ${val.yolo_flags}
     params:
       - val
     deps: 
@@ -131,25 +128,24 @@ stages:
   exports:
     foreach: ${export.formats}
     do:
-      cmd:
-      - |
-        docker run -it --ipc=host \
-        -v "$(pwd)"/datasets:/usr/src/datasets \
-        -v "$(pwd)"/runs:/usr/src/app/runs \
-        \${YOLOV5_IMAGE} \
-          python3 export.py \
-          --data ${data.export} \
-          --weights ${train.project}/${exp.name}/weights/best.pt \
-          --img-size ${export.img_size} \
-          --batch-size  ${export.batch_size} \
-          --opset ${export.opset} \
-          --topk-per-class ${export.topk_per_class} \
-          --topk-all ${export.topk_all} \
-          --iou-thres ${export.iou_thres} \
-          --conf-thres ${export.conf_thres} \
-          --include ${item.name} \
-          ${export.yolo_flags}
+      cmd: >- 
+        docker run -it --ipc=host 
+        -v "$(pwd)"/datasets:/usr/src/datasets
+        -v "$(pwd)"/runs:/usr/src/app/runs
+        ${YOLOV5_IMAGE}
+        python3 export.py 
+        --data ${data.export}
+        --weights ${train.project}/${exp.name}/weights/best.pt
+        --img-size ${export.img_size}
+        --batch-size  ${export.batch_size}
+        --opset ${export.opset}
+        --topk-per-class ${export.topk_per_class}
+        --topk-all ${export.topk_all}
+        --iou-thres ${export.iou_thres}
+        --conf-thres ${export.conf_thres}
+        --include ${item.name}
+        ${export.yolo_flags}
       deps:
-      - ${train.project}/${exp.name}/weights/best.pt
+        - ${train.project}/${exp.name}/weights/best.pt
       outs:
         - ${train.project}/${exp.name}/weights/best.${item.ext}

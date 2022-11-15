@@ -17,25 +17,11 @@ pip install -r requirements.txt
 ## Build custom Docker image
 
 ```bash
-./build_image.sh
+./scripts/build_image.sh
 ```
-
-## Create `.env`
-
-```bash
-touch .env
-```
-
-Add to `.env` custom image name:
-
-`.env`
-```dotenv
-YOLOV5_IMAGE=openbot-vision-object-detection:latest
-```
-
 
 ## Run DVC pipeline
 
 ```bash
-./run_pipeline.sh
+dvc exp run
 ```
