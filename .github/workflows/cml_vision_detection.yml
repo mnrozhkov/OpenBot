@@ -1,0 +1,118 @@
+name: vision/object_detection CML workflow
+
+on: 
+  push:
+    branches:
+      - exp-cloud**
+
+env:
+  WORKDIR: vision/object_detection  
+
+jobs:
+
+  # launch-runner:    
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: iterative/setup-cml@v1
+  #     - name: Deploy runner on AWS EC2
+  #     # Supports AWS, Azure, GCP, K8s
+  #     env:
+  #         REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #     run: |
+  #       cml runner launch \
+  #       --cloud=aws \
+  #       --cloud-region=us-west \
+  #       --cloud-type=m5.2xlarge \
+  #       --labels=cml-runner
+
+  prepare_environment:
+    runs-on: ['self-hosted', 'cml-runner']
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          clean: false
+      - name: Build image
+        run: |
+          cd ${{ env.WORKDIR }}
+          ./scripts/build_image.sh
+      - name: Build virtual environment
+        run: |
+          cd ${{ env.WORKDIR }}
+          python3 -m venv .venv
+          echo "export PYTHONPATH=$PWD" >> .venv/bin/activate
+          source .venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+  run_dvc_pipeline:
+    needs: ['prepare_environment']
+    runs-on: ['self-hosted', 'cml-runner']
+    env:
+      REPO_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - uses: iterative/setup-cml@v1
+        with:
+          sudo: false
+      - name: Run DVC experiment
+        run: |
+          cd ${{ env.WORKDIR }}
+          source .venv/bin/activate
+          dvc exp run
+      - name: Build report
+        run: |
+          cd ${{ env.WORKDIR }}
+          source .venv/bin/activate
+
+          echo "# Experiment Details" > report.md
+          echo "User: ${{ github.GITHUB_ACTOR }}" >> report.md
+          echo >> report.md
+
+          echo "# Metrics" >> report.md
+          echo "## Experiment metrics">> report.md
+          dvc metrics show --show-md >> report.md
+
+          echo "## Metrics Diffs" >> report.md
+          dvc metrics diff --all --show-md >> report.md
+
+          echo "# Train plots" >> report.md
+          echo "## confusion matrix" >> report.md
+          echo '![]'"(runs/train/exp/confusion_matrix.png)" >> report.md
+          echo "## F1 curve" >> report.md
+          echo '![]'"(runs/train/exp/F1_curve.png)" >> report.md
+          echo "## labels correlogram" >> report.md
+          echo '![]'"(runs/train/exp/labels_correlogram.jpg)" >> report.md
+          echo "## labels" >> report.md
+          echo '![]'"(runs/train/exp/labels.png)" >> report.md
+          echo "## P curve" >> report.md
+          echo '![]'"(runs/train/exp/P_curve.png)" >> report.md
+          echo "## PR curve" >> report.md
+          echo '![]'"(runs/train/exp/PR_curve.png)" >> report.md
+          echo "## R curve" >> report.md
+          echo '![]'"(runs/train/exp/R_curve.png)" >> report.md
+
+          echo "# Val plots" >> report.md
+          echo "## confusion matrix" >> report.md
+          echo '![]'"(runs/val/exp/confusion_matrix.png)" >> report.md
+          echo "## F1 curve" >> report.md
+          echo '![]'"(runs/val/exp/F1_curve.png)" >> report.md
+          echo "## P curve" >> report.md
+          echo '![]'"(runs/val/exp/P_curve.png)" >> report.md
+          echo "## PR curve" >> report.md
+          echo '![]'"(runs/val/exp/PR_curve.png)" >> report.md
+          echo "## R curve" >> report.md
+          echo '![]'"(runs/val/exp/R_curve.png)" >> report.md
+      - name: Create pull request
+        run: cml pr create .
+      - name: Publish report
+        run: |
+          cd ${{ env.WORKDIR }}
+          cml comment create report.md
+          cml comment create --pr report.md
+      

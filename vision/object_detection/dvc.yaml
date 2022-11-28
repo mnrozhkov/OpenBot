@@ -10,7 +10,7 @@ stages:
       - train
     cmd:
     - |
-      docker run -it \
+      docker run \
         -v "$(pwd)"/models/weights:${docker_weights} \
         ${YOLOV5_IMAGE} \
         python3 -c "from utils.downloads import attempt_download; attempt_download(f'models/weights/${train.weights}')"
@@ -22,7 +22,7 @@ stages:
     params:
       - train
     cmd: >- 
-      docker run -it
+      docker run
       -v "$(pwd)"/datasets:/usr/src/datasets
       -v "$(pwd)"/models/weights:${docker_weights} 
       -v "$(pwd)"/runs:/usr/src/app/runs 
@@ -74,7 +74,7 @@ stages:
 
   val:
     cmd: >- 
-      docker run -it --ipc=host
+      docker run --ipc=host
       -v "$(pwd)"/datasets:/usr/src/datasets
       -v "$(pwd)"/runs:/usr/src/app/runs
       ${YOLOV5_IMAGE}
@@ -113,7 +113,7 @@ stages:
     foreach: ${export.formats}
     do:
       cmd: >- 
-        docker run -it --ipc=host 
+        docker run --ipc=host 
         -v "$(pwd)"/datasets:/usr/src/datasets
         -v "$(pwd)"/runs:/usr/src/app/runs
         ${YOLOV5_IMAGE}
