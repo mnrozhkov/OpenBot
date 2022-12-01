@@ -5,6 +5,16 @@ vars:
 
 stages:
 
+  download_data:
+    params:
+      - data
+    cmd: >-
+      docker run -ti
+      -u $(id -u)
+      -v "$(pwd)"/datasets:/usr/src/datasets/
+      ${YOLOV5_IMAGE}
+      bash -c "data/scripts/get_${data.dataset}.sh"
+
   download_model:
     params:
       - train

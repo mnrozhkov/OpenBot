@@ -18,6 +18,18 @@ pip install -r requirements.txt
 ./scripts/build_image.sh
 ```
 
+## Download dataset
+
+```bash
+dvc repro download_data
+```
+
+or with option `-f` to download/re-download forcibly:
+
+```bash
+dvc repro -f download_data
+```
+
 ## Run DVC pipeline
 
 ```bash
