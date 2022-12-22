@@ -2,15 +2,14 @@ schema: '2.0'
 stages:
   download_model:
     cmd:
-    - "docker run -it \\\n  -v \"$(pwd)\"/models/weights:/usr/src/app/models/weights\
-      \ \\\n  openbot-vision-object-detection:latest \\\n  python3 -c \"from utils.downloads\
+    - "docker run \\\n  -v \"$(pwd)\"/models/weights:/usr/src/app/models/weights \\\
+      \n  openbot-vision-object-detection:latest \\\n  python3 -c \"from utils.downloads\
       \ import attempt_download; attempt_download(f'models/weights/yolov5s.pt')\"\n"
     params:
       params.yaml:
         train:
           weights_dir: models/weights
           weights: yolov5s.pt
-          data: data/coco128.yaml
           hyp: data/hyps/hyp.scratch-low.yaml
           epochs: 3
           batch_size: 16
@@ -29,22 +28,31 @@ stages:
       md5: 523cc152dea05959e1a07f04fb43ebcf
       size: 14808437
   train:
-    cmd: docker run -it -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/models/weights:/usr/src/app/models/weights  -v
-      "$(pwd)"/runs:/usr/src/app/runs  openbot-vision-object-detection:latest  python3
-      train.py  --weights models/weights/yolov5s.pt  --data data/coco128.yaml  --hyp
-      data/hyps/hyp.scratch-low.yaml  --epochs 3  --batch-size 16  --img-size 32  --optimizer
-      Adam  --workers 8  --project runs/train  --name exp  --label-smoothing 0.0  --save-period
-      -1  --entity None  --bbox_interval -1  --artifact_alias latest --exist-ok
+    cmd: docker run -v "$(pwd)"/data:/usr/src/app/data -v "$(pwd)"/datasets:/usr/src/datasets
+      -v "$(pwd)"/models/weights:/usr/src/app/models/weights  -v "$(pwd)"/runs:/usr/src/app/runs  openbot-vision-object-detection:latest  python3
+      train.py  --weights models/weights/yolov5s.pt  --data data/coco128_label_studio.yaml
+      --hyp data/hyps/hyp.scratch-low.yaml  --epochs 3  --batch-size 16  --img-size
+      32  --optimizer Adam  --workers 8  --project runs/train  --name exp  --label-smoothing
+      0.0  --save-period -1  --entity None  --bbox_interval -1  --artifact_alias latest
+      --exist-ok
     deps:
+    - path: datasets/coco128_label_studio/train.txt
+      md5: 0efa16440729c3eb07ad6c5d94200fda
+      size: 3328
+    - path: datasets/coco128_label_studio/val.txt
+      md5: 0efa16440729c3eb07ad6c5d94200fda
+      size: 3328
     - path: models/weights/yolov5s.pt
       md5: 523cc152dea05959e1a07f04fb43ebcf
       size: 14808437
     params:
       params.yaml:
+        prepare_data:
+          is_validate: false
+          val_size: 0.3
         train:
           weights_dir: models/weights
           weights: yolov5s.pt
-          data: data/coco128.yaml
           hyp: data/hyps/hyp.scratch-low.yaml
           epochs: 3
           batch_size: 16
@@ -60,53 +68,57 @@ stages:
           yolo_flags: --exist-ok
     outs:
     - path: runs/train/exp/F1_curve.png
-      md5: bc60e32bb5223cb377428c69fbe6ff70
-      size: 93906
+      md5: 983d6c151ef05c6579bb2f915285c1fb
+      size: 59208
     - path: runs/train/exp/PR_curve.png
-      md5: 951903eed69ec7ae5e03a272835c5f2d
-      size: 74394
+      md5: fa20884ea898a7eaadb07b0b081d2062
+      size: 69684
     - path: runs/train/exp/P_curve.png
-      md5: ae7cf341d9759bf8fed0c1cdd437bf31
-      size: 153765
+      md5: b0b625a834c1112bb4f7b653e0aeeb91
+      size: 79615
     - path: runs/train/exp/R_curve.png
-      md5: af2f06a06930fa1fc316641c9f31931f
-      size: 99009
+      md5: e9bb7e6ed79b0ab862e2770536ce43b8
+      size: 66897
     - path: runs/train/exp/confusion_matrix.png
-      md5: f68680cb912de8e6b3072a7f50f0fe53
-      size: 553826
+      md5: b121da11c5fd711d20aa0f0305dfb13c
+      size: 500572
     - path: runs/train/exp/hyp.yaml
       md5: 0b99b67c046abfdcc69005b3d8db9e83
       size: 373
     - path: runs/train/exp/labels.jpg
-      md5: dcd2672956db13bacd2d56ea18a74186
-      size: 245726
+      md5: e40b33eee07499cac9a2fd55c41a7766
+      size: 238213
     - path: runs/train/exp/labels_correlogram.jpg
       md5: aaf6ec90cd751d5f88fad529d0ca5147
       size: 211515
     - path: runs/train/exp/results.csv
-      md5: 2f70602bf07f85480aa10ff96f9e57c6
+      md5: 5d5252857fded7fedefc58b40943bd83
       size: 1176
     - path: runs/train/exp/results.png
-      md5: 0848455b9b8550f3538ca898ecafa954
-      size: 291783
+      md5: 7742d778bbb28e2669d3dbc24ac09c50
+      size: 306632
     - path: runs/train/exp/weights/best.pt
-      md5: 52bfc64f359a905efbeb3abbdc83fa9f
-      size: 14641277
+      md5: 07de336dc91ae0e82d236e7b8a500d68
+      size: 14592765
     - path: runs/train/exp/weights/last.pt
-      md5: e91dee875839ec54fb3ddde8ab2e1a7c
-      size: 14641277
+      md5: fbf108dd114fc488f1c8debc4e93caf4
+      size: 14592765
   val:
-    cmd: docker run -it --ipc=host -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
-      openbot-vision-object-detection:latest python3 val.py --data data/coco128.yaml
-      --weights runs/train/exp/weights/best.pt --batch-size  32 --img-size 640 --conf-thres
-      0.001 --iou-thres 0.6 --max-det 50 --task val --project runs/val --name exp
-      --verbose --save-conf --save-json --exist-ok
+    cmd: docker run --ipc=host -v "$(pwd)"/data:/usr/src/app/data -v "$(pwd)"/datasets:/usr/src/datasets
+      -v "$(pwd)"/runs:/usr/src/app/runs openbot-vision-object-detection:latest python3
+      val.py --data data/coco128_label_studio.yaml --weights runs/train/exp/weights/best.pt
+      --batch-size  32 --img-size 640 --conf-thres 0.001 --iou-thres 0.6 --max-det
+      50 --task val --project runs/val --name exp --verbose --save-conf --save-json
+      --exist-ok
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 52bfc64f359a905efbeb3abbdc83fa9f
-      size: 14641277
+      md5: 07de336dc91ae0e82d236e7b8a500d68
+      size: 14592765
     params:
       params.yaml:
+        prepare_data:
+          is_validate: false
+          val_size: 0.3
         val:
           batch_size: 32
           img_size: 640
@@ -118,62 +130,86 @@ stages:
           yolo_flags: --verbose --save-conf --save-json --exist-ok
     outs:
     - path: runs/val/exp/F1_curve.png
-      md5: 425605132f3f5e88a485dfdbb34b22f3
-      size: 59445
+      md5: c104e88b136de568a8948a722df816f4
+      size: 55331
     - path: runs/val/exp/PR_curve.png
-      md5: fb05c9f882db817675711e80c9fcf1ae
-      size: 68583
+      md5: 2b9d65a67ab0b298599202e86914e124
+      size: 66586
     - path: runs/val/exp/P_curve.png
-      md5: 54b74dcee12a8fb8ffd3f27cf3bec4b6
-      size: 85645
+      md5: 7b152ac037188f15d2c233299f5d9a8b
+      size: 72522
     - path: runs/val/exp/R_curve.png
-      md5: 962dc460a85e18ec0c2a2961861ed63f
-      size: 61054
+      md5: 521ce0975ee1e33a9aac8189031cd121
+      size: 60107
     - path: runs/val/exp/best_predictions.json
-      md5: b841283f28cb1f661f4cd0503c7f8632
-      size: 38969
+      md5: 638bf84c26892fdcc65fc5698fc6459d
+      size: 58623
     - path: runs/val/exp/confusion_matrix.png
-      md5: 15397306a40af8e9c5e9b91131a7298c
-      size: 553314
+      md5: b121da11c5fd711d20aa0f0305dfb13c
+      size: 500572
   exports@2:
-    cmd: docker run -it --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
-      openbot-vision-object-detection:latest python3 export.py  --data data/coco128.yaml
+    cmd: docker run --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
+      openbot-vision-object-detection:latest python3 export.py  --data data/coco128_label_studio.yaml
       --weights runs/train/exp/weights/best.pt --img-size 640 --batch-size  1 --opset
       12 --topk-per-class 100 --topk-all 100 --iou-thres 0.45 --conf-thres 0.25 --include
       coreml --verbose
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 52bfc64f359a905efbeb3abbdc83fa9f
-      size: 14641277
+      md5: 07de336dc91ae0e82d236e7b8a500d68
+      size: 14592765
     outs:
     - path: runs/train/exp/weights/best.mlmodel
-      md5: 46d94515a4bfef80dd869c96d2e0b82f
-      size: 29321907
+      md5: 53f14d840eafb043467377f16635e921
+      size: 29224815
   exports@1:
-    cmd: docker run -it --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
-      openbot-vision-object-detection:latest python3 export.py  --data data/coco128.yaml
+    cmd: docker run --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
+      openbot-vision-object-detection:latest python3 export.py  --data data/coco128_label_studio.yaml
       --weights runs/train/exp/weights/best.pt --img-size 640 --batch-size  1 --opset
       12 --topk-per-class 100 --topk-all 100 --iou-thres 0.45 --conf-thres 0.25 --include
       onnx --verbose
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 52bfc64f359a905efbeb3abbdc83fa9f
-      size: 14641277
+      md5: 07de336dc91ae0e82d236e7b8a500d68
+      size: 14592765
     outs:
     - path: runs/train/exp/weights/best.onnx
-      md5: c90745f520888d601ba50ba3d6769fa6
-      size: 29352431
+      md5: aa90b387ac8efd152f598c6146a53f65
+      size: 29255195
   exports@0:
-    cmd: docker run -it --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
-      openbot-vision-object-detection:latest python3 export.py  --data data/coco128.yaml
+    cmd: docker run --ipc=host  -v "$(pwd)"/datasets:/usr/src/datasets -v "$(pwd)"/runs:/usr/src/app/runs
+      openbot-vision-object-detection:latest python3 export.py  --data data/coco128_label_studio.yaml
       --weights runs/train/exp/weights/best.pt --img-size 640 --batch-size  1 --opset
       12 --topk-per-class 100 --topk-all 100 --iou-thres 0.45 --conf-thres 0.25 --include
       torchscript --verbose
     deps:
     - path: runs/train/exp/weights/best.pt
-      md5: 52bfc64f359a905efbeb3abbdc83fa9f
-      size: 14641277
+      md5: 07de336dc91ae0e82d236e7b8a500d68
+      size: 14592765
     outs:
     - path: runs/train/exp/weights/best.torchscript
-      md5: 128f80727d835f488ee76d8164663bb8
-      size: 29378005
+      md5: b87402c6ff07ef87b0ce606dd2923453
+      size: 29280917
+  prepare_data:
+    cmd: python src/stages/prepare_data.py --config=params.yaml
+    deps:
+    - path: datasets/coco128_label_studio/images
+      md5: 5b06a45511f25f93ef4f5f2f97f1c2a9.dir
+      size: 6930964
+      nfiles: 128
+    - path: datasets/coco128_label_studio/labels
+      md5: 09ec0b0b062eae38c3c5179593c30660.dir
+      size: 358564
+      nfiles: 128
+    params:
+      params.yaml:
+        data:
+          datasets_dir: datasets
+          data_configs_dir: data
+          dataset: coco128_label_studio
+    outs:
+    - path: datasets/coco128_label_studio/train.txt
+      md5: 0efa16440729c3eb07ad6c5d94200fda
+      size: 3328
+    - path: datasets/coco128_label_studio/val.txt
+      md5: 0efa16440729c3eb07ad6c5d94200fda
+      size: 3328
