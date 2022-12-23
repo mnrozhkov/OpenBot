@@ -33,7 +33,7 @@ dvc get --rev ${REV} -o datasets ${REPO_URL} ${DATA_PATH}
 example:
 
 ```bash
-export REPO_URL=git@gitlab.com:7labs.ru/research/openbot/dataset_from_video.git
+export REPO_URL=git@gitlab.com:7labs.ru/research/openbot/data-registry.git
 export REV=monorepo-data-registry
 export DATA_PATH=data/coco128_label_studio
 
