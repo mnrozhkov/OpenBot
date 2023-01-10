@@ -18,6 +18,28 @@ pip install -r requirements.txt
 ./scripts/build_image.sh
 ```
 
+## Download dataset
+
+Download dataset from DVC data registry:
+
+```bash
+export REPO_URL=<data_registry_repo_url>
+export REV=<revision_name>  # branch/tag name or commit hash
+export DATA_PATH=<path_to_data_in_the_repo>
+
+dvc get --rev ${REV} -o datasets ${REPO_URL} ${DATA_PATH}
+```
+
+example:
+
+```bash
+export REPO_URL=git@gitlab.com:7labs.ru/research/openbot/data-registry.git
+export REV=monorepo-data-registry
+export DATA_PATH=data/coco128_label_studio
+
+dvc get --rev ${REV} -o datasets ${REPO_URL} ${DATA_PATH}
+```
+
 ## Run DVC pipeline
 
 ```bash

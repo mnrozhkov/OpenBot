@@ -5,6 +5,19 @@ vars:
 
 stages:
 
+  prepare_data:
+    params:
+      - data
+    cmd: python src/stages/prepare_data.py --config=params.yaml
+    deps:
+      - ${data.datasets_dir}/${data.dataset}/images
+      - ${data.datasets_dir}/${data.dataset}/labels
+    outs:
+      - ${data.datasets_dir}/${data.dataset}/train.txt:
+          cache: false
+      - ${data.datasets_dir}/${data.dataset}/val.txt:
+          cache: false
+
   download_model:
     params:
       - train
@@ -20,16 +33,18 @@ stages:
 
   train:
     params:
+      - prepare_data
       - train
     cmd: >- 
       docker run
+      -v "$(pwd)"/data:/usr/src/app/data
       -v "$(pwd)"/datasets:/usr/src/datasets
       -v "$(pwd)"/models/weights:${docker_weights} 
       -v "$(pwd)"/runs:/usr/src/app/runs 
       ${YOLOV5_IMAGE} 
       python3 train.py 
       --weights ${train.weights_dir}/${train.weights} 
-      --data ${data.train} 
+      --data ${data.data_configs_dir}/${data.dataset}.yaml
       --hyp ${train.hyp} 
       --epochs ${train.epochs} 
       --batch-size ${train.batch_size} 
@@ -45,6 +60,8 @@ stages:
       --artifact_alias ${train.artifact_alias}
       ${train.yolo_flags}
     deps:
+      - ${data.datasets_dir}/${data.dataset}/train.txt
+      - ${data.datasets_dir}/${data.dataset}/val.txt
       - models/weights/${train.weights}
     outs:
       - ${train.project}/${exp.name}/weights/last.pt
@@ -75,11 +92,12 @@ stages:
   val:
     cmd: >- 
       docker run --ipc=host
+      -v "$(pwd)"/data:/usr/src/app/data
       -v "$(pwd)"/datasets:/usr/src/datasets
       -v "$(pwd)"/runs:/usr/src/app/runs
       ${YOLOV5_IMAGE}
       python3 val.py
-      --data ${data.val}
+      --data ${data.data_configs_dir}/${data.dataset}.yaml
       --weights ${train.project}/${exp.name}/weights/best.pt
       --batch-size  ${val.batch_size}
       --img-size ${val.img_size}
@@ -91,6 +109,7 @@ stages:
       --name ${exp.name}
       ${val.yolo_flags}
     params:
+      - prepare_data
       - val
     deps: 
       - ${train.project}/${exp.name}/weights/best.pt
@@ -118,7 +137,7 @@ stages:
         -v "$(pwd)"/runs:/usr/src/app/runs
         ${YOLOV5_IMAGE}
         python3 export.py 
-        --data ${data.export}
+        --data ${data.data_configs_dir}/${data.dataset}.yaml
         --weights ${train.project}/${exp.name}/weights/best.pt
         --img-size ${export.img_size}
         --batch-size  ${export.batch_size}

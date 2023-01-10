@@ -5,3 +5,4 @@ data_confgi/*
 datasets/*
 models/*
 *tfevents*
+__pycache__

@@ -4,3 +4,7 @@ dvclive==0.12.1
 
 # ML
 pycocotools==2.0.5
+scikit-learn==1.2.0
+
+# Others
+python-box==6.1.0
